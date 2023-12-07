@@ -16,7 +16,6 @@ package config
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -30,6 +29,13 @@ type SocketType int
 const (
 	TCP SocketType = iota
 	UDS
+)
+
+type ForLocalRelay int
+
+const (
+	No ForLocalRelay = iota
+	Yes
 )
 
 const (
@@ -73,6 +79,11 @@ const (
 	RELAY_STREAM_IDLE_TIMEOUT_DEFAULT      = "2400s"  // Default is set to 40 min, whereas Envoy default is 5 min.
 	RELAY_BUFFER_LIMIT_BYTES_DEFAULT       = 10485760 // Default is set to 10MB, whereas Envoy default is 1 MB.
 	APPNET_MANAGEMENT_PORT_DEFAULT         = 443
+
+	// local agent relay mode
+	ENABLE_LOCAL_RELAY_MODE_FOR_XDS_DEFAULT  = false
+	APPNET_LOCAL_RELAY_LISTENER_PORT_DEFAULT = 15003
+	APPNET_LOCAL_RELAY_ADMIN_PORT_DEFAULT    = 9903
 
 	// agent handled endpoints
 	AGENT_STATS_ENDPOINT_URL          = "/stats/prometheus"
@@ -169,6 +180,13 @@ type AgentConfig struct {
 	AppNetRelayListenerUdsPath string
 	RelayStreamIdleTimeout     string
 	RelayBufferLimitBytes      int
+
+	// Local Relay Mode required for AppMesh Envoy to sign xDS requests
+	EnableLocalRelayModeForXds  bool
+	LocalRelayEnvoyConcurrency  int
+	LocalRelayEnvoyConfigPath   string
+	LocalRelayEnvoyListenerPort int
+	LocalRelayEnvoyAdminPort    int
 
 	// Poll intervals
 	PidPollInterval       time.Duration
@@ -293,9 +311,8 @@ func dumpAllEnvVariables() {
 	log.Infof("Agent Environment Variables: %v", agentVar)
 }
 
-func getDefaultBootstrapFilePath() string {
-
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "envoy-config-*.yaml")
+func GetDefaultBootstrapFilePath() string {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "envoy-config-*.yaml")
 	if err != nil {
 		log.Errorf("Cannot create bootstrap file. %v", err)
 	}
@@ -416,6 +433,13 @@ func (config *AgentConfig) ParseFlags(args []string) {
 	flags.Parse(args[1:])
 }
 
+func (config *AgentConfig) SetLocalRelayDefaults() {
+	// xDS Local Relay
+	config.LocalRelayEnvoyConcurrency = 1
+	config.RelayStreamIdleTimeout = getEnvValueAsString("RELAY_STREAM_IDLE_TIMEOUT", RELAY_STREAM_IDLE_TIMEOUT_DEFAULT)
+	config.RelayBufferLimitBytes = getEnvValueAsInt("RELAY_BUFFER_LIMIT_BYTES", RELAY_BUFFER_LIMIT_BYTES_DEFAULT)
+}
+
 func (config *AgentConfig) SetDefaults() {
 
 	config.CommandPath = "/usr/bin/envoy"
@@ -447,7 +471,16 @@ func (config *AgentConfig) SetDefaults() {
 		} else {
 			config.AppNetManagementDomainName = xdsDomain
 		}
+	} else {
+		// Set this value as it is used in AppMesh mode. If this is running in ECS Service Connect mode it will not be used.
+		config.LocalRelayEnvoyListenerPort = getEnvValueAsInt("APPNET_LOCAL_RELAY_LISTENER_PORT", APPNET_LOCAL_RELAY_LISTENER_PORT_DEFAULT)
+		config.LocalRelayEnvoyAdminPort = getEnvValueAsInt("APPNET_LOCAL_RELAY_ADMIN_PORT", APPNET_LOCAL_RELAY_ADMIN_PORT_DEFAULT)
 	}
+
+	// xDS Local Relay (required only for AppMesh).
+	// To determine if Local Relay Envoy has to be enabled to sign xDS requests.
+	// Defaults to False and will be overridden while processing node id prior to bootstrap generation.
+	config.EnableLocalRelayModeForXds = ENABLE_LOCAL_RELAY_MODE_FOR_XDS_DEFAULT
 
 	config.AgentAdminMode = getAdminModeFromEnv("APPNET_AGENT_ADMIN_MODE", AGENT_ADMIN_MODE_DEFAULT)
 	if config.AgentAdminMode == UDS {
@@ -497,7 +530,7 @@ func (config *AgentConfig) SetDefaults() {
 	config.MaxLogFileSizeMB = getEnvValueAsFloat("APPNET_AGENT_MAX_LOG_FILE_SIZE", AGENT_MAX_LOG_FILE_SIZE_DEFAULT)
 	config.MaxLogCount = getEnvValueAsInt("APPNET_AGENT_MAX_RETENTION_COUNT", AGENT_MAX_LOG_RETENTION_DEFAULT)
 	if config.EnvoyConfigPath == "" {
-		config.EnvoyConfigPath = getEnvValueAsString("ENVOY_CONFIG_FILE", getDefaultBootstrapFilePath())
+		config.EnvoyConfigPath = getEnvValueAsString("ENVOY_CONFIG_FILE", GetDefaultBootstrapFilePath())
 	}
 
 	config.EnvoyConcurrency = getEnvValueAsInt("ENVOY_CONCURRENCY", ENVOY_CONCURRENCY_DEFAULT)
