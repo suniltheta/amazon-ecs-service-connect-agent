@@ -3007,8 +3007,11 @@ func TestRelayBootstrap_DefaultValuesSetForEnvVariables(t *testing.T) {
 	_, f_exists := os.LookupEnv("RELAY_BUFFER_LIMIT_BYTES")
 	assert.True(t, f_exists)
 
-	serviceName, g_exists := os.LookupEnv("SERVICE_NAME")
+	_, g_exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS")
 	assert.True(t, g_exists)
+
+	serviceName, h_exists := os.LookupEnv("SERVICE_NAME")
+	assert.True(t, h_exists)
 	assert.Equal(t, serviceName, "appmesh")
 }
 
@@ -3046,8 +3049,11 @@ func TestRelayBootstrap_DefaultValuesSetForEnvVariableFips(t *testing.T) {
 	_, f_exists := os.LookupEnv("RELAY_BUFFER_LIMIT_BYTES")
 	assert.True(t, f_exists)
 
-	serviceName, g_exists := os.LookupEnv("SERVICE_NAME")
+	_, g_exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS")
 	assert.True(t, g_exists)
+
+	serviceName, h_exists := os.LookupEnv("SERVICE_NAME")
+	assert.True(t, h_exists)
 	assert.Equal(t, serviceName, "appmesh")
 }
 
@@ -3085,8 +3091,11 @@ func TestRelayBootstrap_DefaultValuesSetForEnvVariablesInGovCloud(t *testing.T) 
 	_, f_exists := os.LookupEnv("RELAY_BUFFER_LIMIT_BYTES")
 	assert.True(t, f_exists)
 
-	serviceName, g_exists := os.LookupEnv("SERVICE_NAME")
+	_, g_exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS")
 	assert.True(t, g_exists)
+
+	serviceName, h_exists := os.LookupEnv("SERVICE_NAME")
+	assert.True(t, h_exists)
 	assert.Equal(t, serviceName, "appmesh")
 }
 
@@ -3173,8 +3182,11 @@ func TestLocalRelayBootstrap_DefaultValuesSetForEnvVariables(t *testing.T) {
 	_, g_exists := os.LookupEnv("RELAY_BUFFER_LIMIT_BYTES")
 	assert.True(t, g_exists)
 
-	serviceName, h_exists := os.LookupEnv("SERVICE_NAME")
+	_, h_exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS")
 	assert.True(t, h_exists)
+
+	serviceName, i_exists := os.LookupEnv("SERVICE_NAME")
+	assert.True(t, i_exists)
 	assert.Equal(t, serviceName, "appmesh")
 }
 
@@ -3213,7 +3225,10 @@ func TestLocalRelayBootstrap_DefaultValuesSetForEnvVariableFips(t *testing.T) {
 	_, g_exists := os.LookupEnv("RELAY_BUFFER_LIMIT_BYTES")
 	assert.True(t, g_exists)
 
-	serviceName, h_exists := os.LookupEnv("SERVICE_NAME")
+	_, h_exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS")
 	assert.True(t, h_exists)
+
+	serviceName, i_exists := os.LookupEnv("SERVICE_NAME")
+	assert.True(t, i_exists)
 	assert.Equal(t, serviceName, "appmesh")
 }

@@ -90,5 +90,6 @@ layered_runtime:
     - name: "static_layer_0"
       staticLayer:
         re2.max_program_size.error_level: 1000
+        envoy.reloadable_features.use_http_client_to_fetch_aws_credentials: $ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS
     - name: "admin_layer"
       adminLayer: {}

@@ -129,7 +129,7 @@ func getRuntimeConfigLayer0() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	setUseHttpClientToFetchAwsCredentials, err := env.TruthyOrElse("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS", false)
+	setUseHttpClientToFetchAwsCredentials, err := env.TruthyOrElse("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS", config.ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS_DEFAULT)
 	if err != nil {
 		return nil, err
 	}
@@ -1685,8 +1685,14 @@ func setRelayBootstrapEnvVariables(agentConfig config.AgentConfig, envoyCLIInst 
 		os.Setenv("RELAY_BUFFER_LIMIT_BYTES", fmt.Sprint(agentConfig.RelayBufferLimitBytes))
 	}
 
+	if _, exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS"); !exists {
+		log.Infof("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS is not set, setting default value as: %v", agentConfig.EnvoyUseHttpClientToFetchAwsCredentials)
+		os.Setenv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS", fmt.Sprint(agentConfig.EnvoyUseHttpClientToFetchAwsCredentials))
+	}
+
 	// TODO: Test if any service changes are needed to change to ecs.
 	os.Setenv("SERVICE_NAME", "appmesh")
+
 	return nil
 }
 
