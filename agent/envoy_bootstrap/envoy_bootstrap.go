@@ -1782,14 +1782,14 @@ func CreateRelayBootstrapYamlFile(agentConfig config.AgentConfig, isLocal bool) 
 	// the actual Envoy process that proxies mesh traffic.
 	var envoyConfigPath string
 	if isLocal {
-		envoyConfigPath = agentConfig.EnvoyConfigPath
-	} else {
 		envoyConfigPath = agentConfig.LocalRelayEnvoyConfigPath
+	} else {
+		envoyConfigPath = agentConfig.EnvoyConfigPath
 	}
 
 	statInfo, _ := os.Lstat(envoyConfigPath)
 	if statInfo == nil {
-		return fmt.Errorf("cannot get stat info of relay bootstrap config file %s", agentConfig.LocalRelayEnvoyConfigPath)
+		return fmt.Errorf("cannot get stat info of relay (is local=%v) bootstrap config file %s", isLocal, envoyConfigPath)
 	}
 
 	fileUtilInst := &fileUtil{}
@@ -1809,6 +1809,6 @@ func CreateRelayBootstrapYamlFile(agentConfig config.AgentConfig, isLocal bool) 
 		return fmt.Errorf("cannot write to relay bootstrap config to file. %v", er)
 	}
 
-	e := validateEnvoyConfigPath(agentConfig.LocalRelayEnvoyConfigPath)
+	e := validateEnvoyConfigPath(envoyConfigPath)
 	return e
 }
