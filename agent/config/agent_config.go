@@ -55,7 +55,7 @@ const (
 
 	ENABLE_STATS_SNAPSHOT_DEFAULT = false
 
-	ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS_DEFAULT = false
+	ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS_DEFAULT = true
 
 	ENVOY_SERVER_SCHEME                  = "http"
 	ENVOY_SERVER_HOSTNAME                = "127.0.0.1"
@@ -83,9 +83,11 @@ const (
 	APPNET_MANAGEMENT_PORT_DEFAULT         = 443
 
 	// local agent relay mode
-	ENABLE_LOCAL_RELAY_MODE_FOR_XDS_DEFAULT  = false
-	APPNET_LOCAL_RELAY_LISTENER_PORT_DEFAULT = 15003
-	APPNET_LOCAL_RELAY_ADMIN_PORT_DEFAULT    = 9903
+	ENABLE_LOCAL_RELAY_MODE_FOR_XDS_DEFAULT    = false
+	APPNET_LOCAL_RELAY_LISTENER_PORT_DEFAULT   = 15003
+	APPNET_LOCAL_RELAY_ADMIN_PORT_DEFAULT      = 9903
+	APPNET_LOCAL_RELAY_LOG_DESTINATION_DEFAULT = "/tmp"
+	APPNET_LOCAL_RELAY_LOG_FILE_NAME_DEFAULT   = "local_relay_appnet_envoy.log"
 
 	// agent handled endpoints
 	AGENT_STATS_ENDPOINT_URL          = "/stats/prometheus"
@@ -184,11 +186,13 @@ type AgentConfig struct {
 	RelayBufferLimitBytes      int
 
 	// Local Relay Mode required for AppMesh Envoy to sign xDS requests
-	EnableLocalRelayModeForXds  bool
-	LocalRelayEnvoyConcurrency  int
-	LocalRelayEnvoyConfigPath   string
-	LocalRelayEnvoyListenerPort int
-	LocalRelayEnvoyAdminPort    int
+	EnableLocalRelayModeForXds        bool
+	LocalRelayEnvoyConcurrency        int
+	LocalRelayEnvoyConfigPath         string
+	LocalRelayEnvoyListenerPort       int
+	LocalRelayEnvoyAdminPort          int
+	LocalRelayEnvoyLoggingDestination string
+	LocalRelayEnvoyLogFileName        string
 
 	// Libcurl deprecation Envoy reloadable feature flag
 	EnvoyUseHttpClientToFetchAwsCredentials bool
@@ -418,7 +422,7 @@ func validateEnvoyLogLevel(logLevel *string) {
 	case "trace":
 		return
 	default:
-		*logLevel = "info"
+		*logLevel = "debug"
 	}
 
 }
@@ -431,7 +435,7 @@ func (config *AgentConfig) ParseFlags(args []string) {
 	flags.StringVar(&config.EnvoyConfigPath, "envoyConfigPath", envConfigFile, "envoy bootstrap config path")
 
 	// Unless specified as a parameter to the agent use ENVOY_LOG_LEVEL
-	defaultLogLevel := strings.ToLower(getEnvValueAsString("ENVOY_LOG_LEVEL", "info"))
+	defaultLogLevel := strings.ToLower(getEnvValueAsString("ENVOY_LOG_LEVEL", "debug"))
 	flags.StringVar(&config.EnvoyLogLevel, "logLevel", defaultLogLevel, "the log level (e.g. debug, info)")
 	flags.BoolVar(&config.AgentPollEnvoyReadiness, "envoyReadiness", false, "poll envoy is ready")
 
@@ -480,6 +484,8 @@ func (config *AgentConfig) SetDefaults() {
 		// Set this value as it is used in AppMesh mode. If this is running in ECS Service Connect mode it will not be used.
 		config.LocalRelayEnvoyListenerPort = getEnvValueAsInt("APPNET_LOCAL_RELAY_LISTENER_PORT", APPNET_LOCAL_RELAY_LISTENER_PORT_DEFAULT)
 		config.LocalRelayEnvoyAdminPort = getEnvValueAsInt("APPNET_LOCAL_RELAY_ADMIN_PORT", APPNET_LOCAL_RELAY_ADMIN_PORT_DEFAULT)
+		config.LocalRelayEnvoyLoggingDestination = getEnvValueAsString("APPNET_LOCAL_RELAY_LOG_DESTINATION", APPNET_LOCAL_RELAY_LOG_DESTINATION_DEFAULT)
+		config.LocalRelayEnvoyLogFileName = getEnvValueAsString("APPNET_LOCAL_RELAY_LOG_FILE_NAME", APPNET_LOCAL_RELAY_LOG_FILE_NAME_DEFAULT)
 	}
 
 	// xDS Local Relay (required only for AppMesh).

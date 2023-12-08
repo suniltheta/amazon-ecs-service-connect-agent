@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
 	"sync"
 	"syscall"
@@ -109,8 +110,12 @@ func buildLocalRelayCommandArgs(agentConfig config.AgentConfig) []string {
 
 		args = append(args, "--use-dynamic-base-id")
 
+		// To log to stdout then set
+		// APPNET_LOCAL_RELAY_LOG_DESTINATION="/dev"
+		// APPNET_LOCAL_RELAY_LOG_FILE_NAME="stdout"
 		args = append(args, "--log-path")
-		args = append(args, "/tmp/local_relay_debug.txt")
+		logFullPath := path.Join(agentConfig.LocalRelayEnvoyLoggingDestination, agentConfig.LocalRelayEnvoyLogFileName)
+		args = append(args, logFullPath)
 	}
 
 	if agentConfig.DisableHotRestart {

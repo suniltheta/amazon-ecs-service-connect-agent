@@ -1751,6 +1751,11 @@ func setLocalRelayBootstrapEnvVariables(agentConfig config.AgentConfig, envoyCLI
 		log.Infof("RELAY_BUFFER_LIMIT_BYTES is not set, setting default value as: %v", agentConfig.RelayBufferLimitBytes)
 		os.Setenv("RELAY_BUFFER_LIMIT_BYTES", fmt.Sprint(agentConfig.RelayBufferLimitBytes))
 	}
+
+	if _, exists := os.LookupEnv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS"); !exists {
+		log.Infof("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS is not set, setting default value as: %v", agentConfig.EnvoyUseHttpClientToFetchAwsCredentials)
+		os.Setenv("ENVOY_USE_HTTP_CLIENT_TO_FETCH_AWS_CREDENTIALS", fmt.Sprint(agentConfig.EnvoyUseHttpClientToFetchAwsCredentials))
+	}
 	return nil
 }
 
